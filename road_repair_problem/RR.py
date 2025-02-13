@@ -4,7 +4,7 @@ import random
 road_size = [1, 2, 3, 4, 5, 6, 7]
 fixing_speed = [1, 2, 3, 4, 5, 6, 7]
 area_of_effect = [1, 2, 3, 4, 5, 6, 7]
-number_of_roads = [0, 1, 2, 3, 4, 5, 6, 7]
+# number_of_roads = [0, 1, 2, 3, 4, 5, 6, 7]
 distance_from_road = [1, 2, 3, 4, 5,6, 7]
 number_of_free_workers = [1, 2, 3, 4, 5, 6, 7]
 
@@ -31,7 +31,7 @@ class road:
 class city:
     def __init__(self, name):
         self.name = name
-        self.number_of_roads = 1 + random_choice(number_of_roads)
+        self.number_of_roads = 1 + random_choice(range(min_num_roads))
         # self.neighboring_roads = list(set([random_choice(roads) for _ in range(number_of_roads)]))
         self.neighboring_roads = []
         
@@ -84,8 +84,8 @@ class company:
 # Game setup
 def setup_roads():
     min_num_roads = int(input('input the minimum number of roads: '))
-    roads = [road() for _ in range(min_num_roads + random_choice(number_of_roads))]
-    return roads
+    roads = [road() for _ in range(min_num_roads)]
+    return min_num_roads, roads
 
 def setup_cities():
     num_cities = int(input('input the number of cities: '))
@@ -102,7 +102,7 @@ def setup_companies():
 # Testing
 if __name__ == "__main__":
     # creating instances automatically
-    roads = setup_roads()
+    min_num_roads, roads = setup_roads()
     cities = setup_cities()
     companies = setup_companies()
     
