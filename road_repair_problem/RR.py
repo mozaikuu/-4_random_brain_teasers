@@ -29,7 +29,7 @@ class road:
         
         self.chance_of_breakdown = 0.5
         
-        if random.random() * 100 < self.chance_of_breakdown:
+        if random.random()  < self.chance_of_breakdown:
             self.state = 0
         else:
             self.state = 1
@@ -88,10 +88,15 @@ class worker:
         print(f"Current position: {self.curr_pos}")
         
     def fix_road(self):
-        pass
         # check the nearby roads
-        # print(f"roads to fix: {self.curr_pos.neighboring_roads}")
+        roads_to_fix = [(road, road.state) for road in self.curr_pos.neighboring_roads]
+        next_move = []
+        for road in roads_to_fix:
+            if road[1] == 1:
+                next_move.append(road[0])
+        print(f"roads to fix: {roads_to_fix}")
         # print(f"nearby_roadsFix: {self.curr_pos.neighboring_roads[0].}")
+        #TODO: next to implement -> a dictionary with all roads counting times visited and going to least visited first and visiting equals by random moves
 
         
     def move(self):
