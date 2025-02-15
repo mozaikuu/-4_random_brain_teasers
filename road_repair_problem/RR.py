@@ -36,8 +36,14 @@ class road:
     
     def print_stats(self):
         print(f"road Name: {self.name}")
-        print(f"Road Size: {self.size}")
-        print(f"Road State: {self.state}")
+        print(f"road Size: {self.size}")
+        print(f"road State: {self.state}")
+    
+    def __str__(self):
+        return self.name  # Returns the city name when printed
+
+    def __repr__(self):
+        return f"road({self.name})"  # For debugging
         
 
 
@@ -46,15 +52,13 @@ class city:
     def __init__(self, name):
         self.name = name
         self.number_of_roads = 1 + random_choice(range(min_num_roads))
-        self.neighboring_roads = []
-        self.number_of_roads_copy = self.number_of_roads
-        self.roads_copy = [r.name for r in roads]
+        self.neighboring_roads = roads.copy() #TODO: maybe roads should have only 2 endpoints? naaaaaaaaaaaaaaaaaah
+        self.number_of_roads_to_remove = random.randint(0,len(self.neighboring_roads) - 1)
         
-        while self.number_of_roads_copy > 0:
-            choice = random_choice(self.roads_copy)
-            self.neighboring_roads.append(choice)
-            self.roads_copy.remove(choice)
-            self.number_of_roads_copy -= 1
+        while self.number_of_roads_to_remove > 0:
+            self.neighboring_roads.remove(random_choice(self.neighboring_roads))
+            self.number_of_roads_to_remove -= 1
+
             
     
     
@@ -84,15 +88,18 @@ class worker:
         print(f"Current position: {self.curr_pos}")
         
     def fix_road(self):
+        pass
         # check the nearby roads
-        print(f"nearby_roads: {self.curr_pos.neighboring_roads}")
+        # print(f"roads to fix: {self.curr_pos.neighboring_roads}")
+        # print(f"nearby_roadsFix: {self.curr_pos.neighboring_roads[0].}")
+
         
     def move(self):
         
         # check the nearby roads
         print(f"nearby_roads: {self.curr_pos.neighboring_roads}")
         
-        self.fix_road(self)
+        self.fix_road()
         
         available_cities = []
         
@@ -144,7 +151,7 @@ class company:
 # Game setup
 def setup_roads():
     min_num_roads = int(input('input the minimum number of roads: '))
-    roads = [road() for _ in range(min_num_roads)] #TODO: maybe roads should have only 2 endpoints?
+    roads = [road() for _ in range(min_num_roads)]
     return min_num_roads, roads
 
 def setup_cities():
@@ -171,14 +178,14 @@ if __name__ == "__main__":
     print(f"\n\t total number of cities {len(cities)} roads {len(roads)} companies {len(companies)}")
 
     #TODO: inherit .print_stats? actually no cuz they all print different stuff? idk yet
-
-    print("\nRoads:")
-    for r in roads:
-        r.print_stats()
         
     print("\nCities:")
     for c in cities:
         c.print_stats()
+    
+    print("\nCity Roads:")
+    for c in cities:
+        print(c.neighboring_roads)
         
     print("\nCompanies:")
     for comp in companies:
