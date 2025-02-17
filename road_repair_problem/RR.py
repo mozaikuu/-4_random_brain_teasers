@@ -5,13 +5,13 @@ import random
 road_size = [1, 2, 3, 4, 5, 6, 7]
 fixing_speed = [1, 2, 3, 4, 5, 6, 7]
 area_of_effect = [1, 2, 3, 4, 5, 6, 7]
-distance_from_road = [1, 2, 3, 4, 5,6, 7]
+travel_distance = [1, 2, 3, 4, 5,6, 7]
 number_of_free_workers = [1, 2, 3, 4, 5, 6, 7] #TODO: make variables actually useful
 
 # road_size = [1]
 # fixing_speed = [1]
 # area_of_effect = [1]
-# distance_from_road = [1]
+# travel_distance = [1]
 # number_of_free_workers = [3] # for testing purposes
 
 
@@ -25,6 +25,7 @@ class road:
     def __init__(self):
         self.name = chr(97 + road.count)
         self.size = random_choice(road_size)
+        self.visited = 0
         road.count += 1
         
         self.chance_of_breakdown = 0.5
@@ -81,52 +82,73 @@ class worker:
         self.name = name
         self.fixing_speed = random_choice(fixing_speed)
         self.curr_pos = company_pos
+        self.travel_distance = random_choice(travel_distance)
 
     def print_stats(self):
         print(f"worker: {self.name}")
         print(f"Fixing Speed: {self.fixing_speed}")
         print(f"Current position: {self.curr_pos}")
+        print(f"travel distance: {self.travel_distance}")
+        
         
     def fix_road(self):
         # check the nearby roads
-        roads_to_fix = [(road, road.state) for road in self.curr_pos.neighboring_roads]
-        next_move = []
+        roads_to_fix = [(road, road.state, self.curr_pos) for road in self.curr_pos.neighboring_roads]
+        list_of_broken_roads = []
         for road in roads_to_fix:
             if road[1] == 1:
-                next_move.append(road[0])
+                list_of_broken_roads.append(road)
         print(f"roads to fix: {roads_to_fix}")
+        return roads_to_fix, list_of_broken_roads
         # print(f"nearby_roadsFix: {self.curr_pos.neighboring_roads[0].}")
-        #TODO: next to implement -> a dictionary with all roads counting times visited and going to least visited first and visiting equals by random moves
+        
 
-        
     def move(self):
-        
+        print(self.name)
         # check the nearby roads
         print(f"nearby_roads: {self.curr_pos.neighboring_roads}")
         
-        self.fix_road()
+        roads_to_fix, list_of_broken_roads = self.fix_road()
         
         available_cities = []
+        available_roads = []
         
         for city in cities:
             for road in self.curr_pos.neighboring_roads:
                 if road in city.neighboring_roads and self.curr_pos != city:
                     available_cities.append(city)
+                    available_roads.append(road)
+            
+        
+        if len(list_of_broken_roads) > 0:          
+            next_move = min(list_of_broken_roads, key=lambda x: x[0].visited)
+            worker.curr_pos = next_move[2]
+        else:
+            next_move = min(roads_to_fix, key=lambda x: x[0].visited) #TODO: i need to return the city with this
+            worker.curr_pos = next_move[2]
+        
         available_cities = list(set(available_cities))  
+        road_counter = list(set([(road, road.visited) for road in available_roads]))
         print(f"available cities to go to are: {available_cities}")
+        print(f"available roads to go to are: {road_counter}")
+        print(f"going to {next_move}")
+        print("")
+        next_move[0].state = 0
+        next_move[0].visited += 1
+        
+    def walking_loop(self):
+        while self.travel_distance > 0:
+            self.move()
+            self.travel_distance -= 1
         
         
-                
-    
-    
-        
+          
 
 # Company class
 class company:
     def __init__(self, name):
         self.name = name
-        self.area_of_effect = random_choice(area_of_effect)
-        self.distance_from_road = random_choice(distance_from_road) #TODO: FIX
+        self.area_of_effect = random_choice(area_of_effect) 
         self.number_of_free_workers = random_choice(number_of_free_workers)
         self.city_of_origin = random_choice(cities)
         
@@ -139,12 +161,11 @@ class company:
     def send_workers_out(self):
         # self.workers[0].move()
         for worker in self.workers:
-            worker.move()
+            worker.walking_loop()
   
     def print_stats(self):
         print(f"Company: {self.name}")
         print(f"Area of Effect: {self.area_of_effect}")
-        print(f"Distance from Road: {self.distance_from_road}") #TODO: FIX
         print(f"Number of Free Workers: {self.number_of_free_workers}")
         print(f"City of origin: {self.city_of_origin}")
         print(f"workers: {[worker.name for worker in self.workers]}")
@@ -167,7 +188,7 @@ def setup_cities():
 def setup_companies():
     num_companies = int(input('input the number of companies: '))
     # num_companies = int(input('input the number range of workers: '))
-    companies = [company(chr(65 + i) + f"({i})") for i in range(num_companies)]  #TODO: add same company different branch later
+    companies = [company(chr(65 + i) + f"({i})") for i in range(num_companies)] 
     return companies
 
     
@@ -182,7 +203,6 @@ if __name__ == "__main__":
     
     print(f"\n\t total number of cities {len(cities)} roads {len(roads)} companies {len(companies)}")
 
-    #TODO: inherit .print_stats? actually no cuz they all print different stuff? idk yet
         
     print("\nCities:")
     for c in cities:
