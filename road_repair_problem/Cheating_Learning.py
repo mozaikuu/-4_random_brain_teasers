@@ -2,7 +2,6 @@ import random
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from time import sleep
 #TODO: import icecream?
 
 # Variables
@@ -98,45 +97,57 @@ class worker:
         
     def fix_road(self):
         # check the nearby roads
-        roads_to_fix = [(road, road.state, road.visited, self.curr_pos) for road in self.curr_pos.neighboring_roads]
-
+        roads_to_fix = [(road, road.state, self.curr_pos) for road in self.curr_pos.neighboring_roads]
+        list_of_broken_roads = []
+        for road in roads_to_fix:
+            if road[1] == 1:
+                list_of_broken_roads.append(road)
         print(f"roads to fix: {roads_to_fix}")
-        
-        return roads_to_fix
+        return roads_to_fix, list_of_broken_roads
         # print(f"nearby_roadsFix: {self.curr_pos.neighboring_roads[0].}")
         
 
     def move(self):
         if self.travel_distance == 0:
-            print(f"staying at {self.curr_pos}")
-            return self.curr_pos, self.curr_pos
-
+            return self.prev_pos, self.curr_pos
+        
         print(self.name)
+        # check the nearby roads
         print(f"nearby_roads: {self.curr_pos.neighboring_roads}")
         
-        roads_to_fix = self.fix_road()
-        next_move = min(roads_to_fix, key=lambda x: x[0].visited) #TODO: i need to return the city with this
+        roads_to_fix, list_of_broken_roads = self.fix_road()
         
-        available_hops = []
+        available_cities = []
+        available_roads = []
         
         for city in cities:
-            if next_move[0] in city.neighboring_roads:
-                available_hops.append(city)
+            for road in self.curr_pos.neighboring_roads:
+                if road in city.neighboring_roads and self.curr_pos != city:
+                    available_cities.append(city)
+                    available_roads.append(road)
         
-        print(available_hops, "available_hops")
-                
-        city_hop = random_choice(available_hops)
+        if len(list_of_broken_roads) > 0:          
+            next_move = min(list_of_broken_roads, key=lambda x: x[0].visited)
+            self.prev_pos = self.curr_pos
+            self.curr_pos = next_move[2]
+        else:
+            next_move = min(roads_to_fix, key=lambda x: x[0].visited)
+            self.prev_pos = self.curr_pos
+            self.curr_pos = next_move[2]
         
-        # Update positions and road state
-        self.prev_pos = self.curr_pos
-        self.curr_pos = city_hop
+        available_cities = list(set(available_cities))  
+        road_counter = list(set([(road, road.visited) for road in available_roads]))
+        print(f"available cities to go to are: {available_cities}")
+        print(f"available roads to go to are: {road_counter}")
+        print(f"going to {next_move}")
+        print("")
+        
+        # Fix the road
         next_move[0].state = 0
         next_move[0].visited += 1
         self.travel_distance -= 1
         
-        print(f"going from {worker.prev_pos} to {worker.curr_pos}")
-        print("")
-        return worker.prev_pos, worker.curr_pos 
+        return self.prev_pos, self.curr_pos
             
                          
 # Company class
@@ -194,122 +205,53 @@ def setup_companies():
 
 
 def visualize_graph(cities, roads):
-    
-    arr_of_cities = []
+    # Create a dictionary to store edge colors and road states
+    edge_info = {}
     
     G = nx.Graph()
     
-    edge_color = ""
-    
+    # Add nodes
     for city in cities:
         G.add_node(city.name)
-    # for road in roads:
-    #     G.add_edge(road.city1.name, road.city2.name, color='red' if road.state == 1 else 'green')
+    
+    # Create edges and store initial colors and road references
     for city1 in cities:
         for city2 in cities:
-            if city1 == city2:
-                continue
-            else:
-                for road1 in city1.neighboring_roads:
-                    for road2 in city2.neighboring_roads:
-                        if road1 == road2:
-                            arr_of_cities.append([city1, city2, road1, road2, edge_color])
-    
-    arr_of_cities = list(set(tuple(sorted(sublist, key=lambda x: x.name if hasattr(x, "name") else x)) for sublist in arr_of_cities))
-    
-    for couple in arr_of_cities:
-        arr_of_cities[0] = "red" if couple[3].state == 1 or couple[4].state == 1 else 'green'
-        G.add_edge(couple[1].name, couple[2].name, color=arr_of_cities[0])
-                            
-    
-    colors = [G[u][v]['color'] for u, v in G.edges]
+            if city1 != city2:
+                common_roads = set(city1.neighboring_roads) & set(city2.neighboring_roads)
+                for road in common_roads:
+                    edge_key = tuple(sorted([city1.name, city2.name]))
+                    G.add_edge(city1.name, city2.name)
+                    edge_info[edge_key] = {'road': road, 'color': 'red' if road.state == 1 else 'green'}
     
     pos = nx.spring_layout(G)
     fig, ax = plt.subplots()
     
-    nx.draw(G, pos, with_labels=True, edge_color=colors, node_color='lightblue', node_size=3000)
-    
-    # for u, v in G.edges():
-    #     print(u, v)      
-    
-    # def update(frame):
-    #     ax.clear()
-        
-    #     # Simulate road repairs over time
-    #     while True:
-    #         for comp in companies:
-    #             for worker in comp.workers:
-    #                 if worker.travel_distance != 0:
-    #                     prev_pos, curr_pos = worker.move()
-    #                     temp_arr = [[prev_pos, curr_pos]]
-    #                     temp_arr = list(set(tuple(sorted(sublist, key=lambda x: x.name if hasattr(x, "name") else x)) for sublist in temp_arr))
-                        
-    #                     for road in G.edges():
-    #                         if temp_arr in road:
-    #                             G[u][v]['color'] = "green"
-                        
-    #                     # Update edge colors
-    #                     colors = [G[u][v]['color'] for u, v in G.edges]
-
-    #                     nx.draw(G, pos, with_labels=True, edge_color=colors, node_color='lightblue', node_size=3000, ax=ax)
-    #                     ax.set_title(f"Step {frame}")
-    #                     sleep(1)
-
-
-    # ani = animation.FuncAnimation(fig, update, frames=10, interval=1000, repeat=True)   
-    # plt.show()  
-    
-    # take 2
     def update(frame):
         ax.clear()
         
-        try:
-            # Update road states and colors
-            for comp in companies:
-                for worker in comp.workers:
-                    if worker.travel_distance > 0:  # Changed from != 0 to > 0
-                        try:
-                            prev_pos, curr_pos = worker.move()
-                            if prev_pos is None or curr_pos is None:
-                                continue
-                            
-                            # Update colors in the graph
-                            for u, v in G.edges():
-                                # Check if this edge connects prev_pos and curr_pos
-                                if (u == prev_pos.name and v == curr_pos.name) or \
-                                   (v == prev_pos.name and u == curr_pos.name):
-                                    G[u][v]['color'] = 'green'
-                        except Exception as e:
-                            print(f"Error in worker move: {e}")
-                            continue
-                
-            # Get updated colors
-            colors = [G[u][v]['color'] for u, v in G.edges()]
-            
-            # Redraw the graph
-            nx.draw(G, pos, with_labels=True, 
-                   edge_color=colors, 
-                   node_color='lightblue', 
-                   node_size=3000, 
-                   ax=ax)
-                
-            ax.set_title(f"Step {frame}")
-            
-        except Exception as e:
-            print(f"Error in update function at step {frame}: {e}")
+        # Simulate road repairs over time
+        for comp in companies:
+            for worker in comp.workers:
+                if worker.travel_distance > 0:
+                    prev_pos, curr_pos = worker.move()
+                    
+                    # Update edge color between prev_pos and curr_pos
+                    if prev_pos != curr_pos:
+                        edge_key = tuple(sorted([prev_pos.name, curr_pos.name]))
+                        if edge_key in edge_info:
+                            road = edge_info[edge_key]['road']
+                            edge_info[edge_key]['color'] = 'green' if road.state == 0 else 'red'
         
-        return ax
+        # Draw the updated graph
+        colors = [edge_info[tuple(sorted([u, v]))]['color'] for u, v in G.edges()]
+        nx.draw(G, pos, with_labels=True, edge_color=colors, 
+                node_color='lightblue', node_size=3000, ax=ax)
+        ax.set_title(f"Step {frame}")
 
-    # Create animation with error handling
-    try:
-        ani = animation.FuncAnimation(fig, update, 
-                                    frames=100, 
-                                    interval=1000,
-                                    repeat=False)
-        plt.show()
-    except Exception as e:
-        print(f"Animation error: {e}")
-    
+    ani = animation.FuncAnimation(fig, update, frames=100, interval=200, repeat=True)   
+    plt.show()
+
 ###################
 
 # import pygame
