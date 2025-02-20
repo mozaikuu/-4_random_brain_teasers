@@ -1,4 +1,6 @@
 import random
+import networkx as nx
+import matplotlib.pyplot as plt
 #TODO: import icecream?
 
 # Variables
@@ -194,6 +196,64 @@ def setup_companies():
     
     
 
+
+            
+#TODO: next Visualize
+
+# 1. Graph-Based Visualization (networkx_visual.py)
+# Uses NetworkX and Matplotlib to visualize cities and roads as a graph
+
+
+def visualize_graph(cities, roads):
+    
+    arr_of_cities = []
+    
+    G = nx.Graph()
+    for city in cities:
+        G.add_node(city.name)
+    # for road in roads:
+    #     G.add_edge(road.city1.name, road.city2.name, color='red' if road.state == 1 else 'green')
+    for city1 in cities:
+        for city2 in cities:
+            if city1 == city2:
+                continue
+            else:
+                for road1 in city1.neighboring_roads:
+                    for road2 in city2.neighboring_roads:
+                        if road1 == road2:
+                            arr_of_cities.append([city1, city2, road1, road2])
+    
+    arr_of_cities = list(set(tuple(sorted(sublist, key=lambda x: x.name if hasattr(x, "name") else x)) for sublist in arr_of_cities))
+    
+    for couple in arr_of_cities:
+        G.add_edge(couple[0].name, couple[1].name, color='red' if couple[2].state == 1 or couple[3].state == 1 else 'green')
+                            
+    
+    colors = [G[u][v]['color'] for u, v in G.edges]
+    pos = nx.spring_layout(G)
+    nx.draw(G, pos, with_labels=True, edge_color=colors, node_color='lightblue', node_size=3000)
+    plt.show()
+
+###################
+
+# import pygame
+
+# def run_pygame_simulation():
+#     pygame.init()
+#     screen = pygame.display.set_mode((600, 600))
+#     clock = pygame.time.Clock()
+#     running = True
+    
+#     while running:
+#         screen.fill((255, 255, 255))
+#         for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 running = False
+#         pygame.display.flip()
+#         clock.tick(30)
+#     pygame.quit()
+
+
 # Testing
 if __name__ == "__main__":
     # creating instances automatically
@@ -223,6 +283,9 @@ if __name__ == "__main__":
             
     companies[0].send_workers_out()
     
+
+    visualize_graph(cities, roads)
+    # run_pygame_simulation()
+    
     # loop on all roads and if all roads are fixed print the data
-            
-#TODO: next add worker functionality
+    # TODO: Make it animated
